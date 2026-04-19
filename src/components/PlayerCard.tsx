@@ -21,6 +21,12 @@ type Props = {
   className?: string;
   /** When true, the card is rendered "disabled/grayed" — used for elimination states. */
   dim?: boolean;
+  /**
+   * When true, swap the tier-based gradient/color for a neutral "mystery" palette.
+   * Use on the hidden card in Higher-or-Lower so its gold/silver/bronze color doesn't
+   * leak whether the OVR is high or low before reveal.
+   */
+  hideTier?: boolean;
 };
 
 /**
@@ -41,12 +47,13 @@ export function PlayerCard({
   revealingWalkout = false,
   className,
   dim = false,
+  hideTier = false,
 }: Props) {
   if (!player) {
     return <div className={cn("h-[360px] w-[240px] rounded-2xl bg-zinc-900/60 animate-pulse", className)} />;
   }
 
-  const tier = tierFor(player.ovr);
+  const tier = hideTier ? "mystery" : tierFor(player.ovr);
   const style = tierStyle(tier);
 
   return (
@@ -62,7 +69,8 @@ export function PlayerCard({
             displayOvr={displayOvr}
             countUp={countUp}
             tilt={tilt}
-            walkout={revealingWalkout || isWalkout(player.ovr)}
+            walkout={revealingWalkout || (!hideTier && isWalkout(player.ovr))}
+            hideStats={hideTier}
           />
         )}
       </AnimatePresence>
@@ -97,6 +105,7 @@ function CardFront({
   countUp,
   tilt,
   walkout,
+  hideStats = false,
 }: {
   player: Player;
   style: ReturnType<typeof tierStyle>;
@@ -104,6 +113,7 @@ function CardFront({
   countUp: boolean;
   tilt: boolean;
   walkout: boolean;
+  hideStats?: boolean;
 }) {
   // Mouse tilt
   const ref = React.useRef<HTMLDivElement>(null);
@@ -179,15 +189,21 @@ function CardFront({
         </div>
       </div>
 
-      {/* Stats grid */}
-      <div className={cn("absolute bottom-4 left-4 right-4 grid grid-cols-3 gap-y-1 gap-x-2 text-[11px] font-bold tracking-wide", style.text)}>
-        <Stat label="PAC" value={player.pace} />
-        <Stat label="SHO" value={player.sho} />
-        <Stat label="PAS" value={player.pas} />
-        <Stat label="DRI" value={player.dri} />
-        <Stat label="DEF" value={player.def} />
-        <Stat label="PHY" value={player.phy} />
-      </div>
+      {/* Stats grid — hidden on mystery cards so stat totals don't leak OVR */}
+      {hideStats ? (
+        <div className={cn("absolute bottom-4 left-4 right-4 flex items-center justify-center gap-2 text-xs font-bold tracking-[0.3em] uppercase opacity-60", style.text)}>
+          <span>Stats hidden</span>
+        </div>
+      ) : (
+        <div className={cn("absolute bottom-4 left-4 right-4 grid grid-cols-3 gap-y-1 gap-x-2 text-[11px] font-bold tracking-wide", style.text)}>
+          <Stat label="PAC" value={player.pace} />
+          <Stat label="SHO" value={player.sho} />
+          <Stat label="PAS" value={player.pas} />
+          <Stat label="DRI" value={player.dri} />
+          <Stat label="DEF" value={player.def} />
+          <Stat label="PHY" value={player.phy} />
+        </div>
+      )}
 
       {/* Hover parallax inner shift — gives a subtle 3D feel */}
       <motion.div style={{ x, y }} className="pointer-events-none absolute inset-0" aria-hidden />

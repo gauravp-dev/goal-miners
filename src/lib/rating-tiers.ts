@@ -2,7 +2,7 @@
  * FUT-inspired rating tiers. Drives card color and walkout logic.
  */
 
-export type Tier = "bronze" | "silver" | "gold" | "toty";
+export type Tier = "bronze" | "silver" | "gold" | "toty" | "mystery";
 
 export interface TierStyle {
   tier: Tier;
@@ -46,6 +46,15 @@ export function tierStyle(tier: Tier): TierStyle {
         border: "border-zinc-200",
         text: "text-zinc-900",
         glow: "0 0 20px rgba(212, 212, 216, 0.5)",
+      };
+    case "mystery":
+      return {
+        tier,
+        // Deliberately neutral so the card color doesn't leak whether the OVR is high or low.
+        gradient: "from-zinc-800 via-zinc-700 to-zinc-600",
+        border: "border-zinc-600",
+        text: "text-zinc-100",
+        glow: "0 0 18px rgba(82, 82, 91, 0.45)",
       };
     case "bronze":
     default:

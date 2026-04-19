@@ -219,6 +219,7 @@ function PlayView({
           player={round.b}
           displayOvr={revealing ? round.b.ovr : "hidden"}
           countUp={revealing}
+          hideTier={!revealing}
           revealingWalkout={revealing && isWalkout(round.b.ovr)}
         />
       </div>

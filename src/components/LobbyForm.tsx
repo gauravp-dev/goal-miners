@@ -12,7 +12,14 @@ import { generateRoomCode } from "@/lib/utils";
  *
  * Display name persists in localStorage so friends don't have to retype it across games.
  */
-export function LobbyForm({ game }: { game: "higher-or-lower" | "playerdle" }) {
+export type GameSlug =
+  | "higher-or-lower"
+  | "playerdle"
+  | "fut-draft"
+  | "who-am-i"
+  | "squad-draft";
+
+export function LobbyForm({ game }: { game: GameSlug }) {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [code, setCode] = React.useState("");

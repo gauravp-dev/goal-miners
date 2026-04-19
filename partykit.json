@@ -4,7 +4,10 @@
   "main": "src/party/higher-or-lower.ts",
   "parties": {
     "higherorlower": "src/party/higher-or-lower.ts",
-    "playerdle": "src/party/playerdle.ts"
+    "playerdle": "src/party/playerdle.ts",
+    "futdraft": "src/party/fut-draft.ts",
+    "whoami": "src/party/who-am-i.ts",
+    "squaddraft": "src/party/squad-draft.ts"
   },
   "compatibilityDate": "2024-10-01"
 }

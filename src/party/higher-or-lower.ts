@@ -148,7 +148,19 @@ export default class HolServer implements Party.Server {
   /* ------------- state machine ------------- */
 
   private startRound() {
-    const pool = usablePlayers().filter((p) => p.ovr >= 75);
+    // Exclude goalkeepers (they use GK-only stats, so the 6-stat card row renders as dashes)
+    // and anyone with a missing outfield stat to keep every card visually complete.
+    const pool = usablePlayers().filter(
+      (p) =>
+        p.ovr >= 75 &&
+        p.pos !== "GK" &&
+        p.pace !== null &&
+        p.sho !== null &&
+        p.pas !== null &&
+        p.dri !== null &&
+        p.def !== null &&
+        p.phy !== null,
+    );
     if (pool.length < 2) {
       this.state.phase = "finished";
       this.broadcast();

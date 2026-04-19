@@ -95,6 +95,7 @@ function normalize(r: Record<string, string>): Player | null {
     phy: num(r["physic"]),
     img: buildImage(r),
     val: num(r["value_eur"]),
+    jerseyNumber: num(r["club_jersey_number"]),
   };
 }
 
