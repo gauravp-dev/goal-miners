@@ -1,0 +1,10 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "goal-miners",
+  "main": "src/party/higher-or-lower.ts",
+  "parties": {
+    "higherorlower": "src/party/higher-or-lower.ts",
+    "playerdle": "src/party/playerdle.ts"
+  },
+  "compatibilityDate": "2024-10-01"
+}

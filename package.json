@@ -1,0 +1,45 @@
+{
+  "name": "goal-miners",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Live-stream football games powered by the EA FC 26 player dataset.",
+  "scripts": {
+    "dev": "concurrently -n next,party -c blue,magenta \"next dev\" \"partykit dev\"",
+    "dev:web": "next dev",
+    "dev:party": "partykit dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "deploy:party": "partykit deploy",
+    "build-dataset": "tsx scripts/build-dataset.ts"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.3",
+    "clsx": "^2.1.1",
+    "framer-motion": "^11.11.17",
+    "lucide-react": "^0.468.0",
+    "next": "^15.5.4",
+    "partysocket": "^1.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.4",
+    "zustand": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.15.0",
+    "eslint-config-next": "^15.5.4",
+    "papaparse": "^5.4.1",
+    "partykit": "^0.0.114",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "packageManager": "pnpm@9.12.3"
+}
