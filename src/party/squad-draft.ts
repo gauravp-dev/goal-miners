@@ -30,7 +30,8 @@ import type {
   SdServerMessage,
   SdState,
 } from "../lib/game-types";
-import { pickAvatar, pickRandom, shuffle } from "../lib/utils";
+import { pickAvatar, shuffle } from "../lib/utils";
+import { OVR_FLOOR, weightedPick } from "../lib/tier-pools";
 
 const TURN_WINDOW_MS = 25_000;
 const MIN_NUMBER = 1;
@@ -235,8 +236,17 @@ export default class SdServer implements Party.Server {
   }
 
   /**
-   * Pick a random player from the dataset who plays a position allowed in
-   * `posPhase`, wears `num` at their club, and isn't already drafted.
+   * Pick a player from the dataset who plays a position allowed in `posPhase`,
+   * wears `num` at their club, and isn't already drafted.
+   *
+   * Uses weighted sampling so when multiple players wear the same number for
+   * the position, Top-5-league and high-OVR candidates dominate — e.g. the
+   * user who calls "#7" in the FWD phase gets Vinícius / Saka / Sterling much
+   * more often than a Saudi third-choice or an Argentine second-division
+   * winger.
+   *
+   * Falls back to the full (post-OVR_FLOOR) candidate set if the ≥OVR_FLOOR
+   * filter leaves nobody available for that number+phase combo.
    */
   private resolvePlayerForNumber(num: number, posPhase: SdPosPhase): Player | null {
     const alreadyPickedIds = new Set<string>();
@@ -244,14 +254,19 @@ export default class SdServer implements Party.Server {
       for (const pk of arr) alreadyPickedIds.add(pk.player.id);
     }
     const allowedPositions = new Set(SD_PHASE_POSITIONS[posPhase]);
-    const candidates = usablePlayers().filter(
-      (p) =>
-        p.jerseyNumber === num &&
-        allowedPositions.has(p.pos) &&
-        !alreadyPickedIds.has(p.id),
-    );
-    if (candidates.length === 0) return null;
-    return pickRandom(candidates);
+    const baseFilter = (p: Player) =>
+      p.jerseyNumber === num &&
+      allowedPositions.has(p.pos) &&
+      !alreadyPickedIds.has(p.id);
+
+    // Prefer the ≥OVR_FLOOR (72) subset; fall back to all usable candidates
+    // (OVR ≥ 65) only if the quality pool is empty for this number+phase.
+    const quality = usablePlayers().filter(baseFilter).filter((p) => p.ovr >= OVR_FLOOR);
+    if (quality.length > 0) return weightedPick(quality);
+
+    const anyCandidate = usablePlayers().filter(baseFilter);
+    if (anyCandidate.length === 0) return null;
+    return weightedPick(anyCandidate);
   }
 
   /* ---------- helpers ---------- */
@@ -276,10 +291,14 @@ export default class SdServer implements Party.Server {
   }
 
   /**
-   * Jersey numbers that have at least one dataset candidate for `posPhase`,
-   * ignoring any already-drafted players. Reset per phase so the client can
-   * grey out the numbers that have no valid player for the current position
-   * group (e.g. #7 in the GK phase).
+   * Jersey numbers that have at least one recognisable-quality candidate
+   * (OVR ≥ OVR_FLOOR) for `posPhase`, ignoring already-drafted players.
+   * Reset per phase so the client can grey out the numbers that have no
+   * valid player for the current position group (e.g. #7 in the GK phase).
+   *
+   * We deliberately intersect with the OVR_FLOOR set so the UI doesn't
+   * tempt the user into calling a number whose only hit is a 68-OVR
+   * Bundesliga 3 keeper they've never heard of.
    */
   private computePhasePool(posPhase: SdPosPhase): number[] {
     const allowed = new Set(SD_PHASE_POSITIONS[posPhase]);
@@ -290,6 +309,7 @@ export default class SdServer implements Party.Server {
     const pool = new Set<number>();
     for (const p of usablePlayers()) {
       if (p.jerseyNumber == null) continue;
+      if (p.ovr < OVR_FLOOR) continue;
       if (!allowed.has(p.pos)) continue;
       if (drafted.has(p.id)) continue;
       pool.add(p.jerseyNumber);

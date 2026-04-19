@@ -14,10 +14,10 @@ import type {
   HolRound,
   HolServerMessage,
   HolState,
-  Player,
   RoomPlayer,
 } from "../lib/game-types";
-import { pickAvatar, pickPair } from "../lib/utils";
+import { pickAvatar } from "../lib/utils";
+import { OVR_SOLID, weightedPickPair } from "../lib/tier-pools";
 
 const GUESS_WINDOW_MS = 12_000;
 const REVEAL_WINDOW_MS = 4_000;
@@ -150,9 +150,11 @@ export default class HolServer implements Party.Server {
   private startRound() {
     // Exclude goalkeepers (they use GK-only stats, so the 6-stat card row renders as dashes)
     // and anyone with a missing outfield stat to keep every card visually complete.
+    // OVR floor is OVR_SOLID (75) — below that you start getting Norwegian third-tier
+    // wingers people don't know.
     const pool = usablePlayers().filter(
       (p) =>
-        p.ovr >= 75 &&
+        p.ovr >= OVR_SOLID &&
         p.pos !== "GK" &&
         p.pace !== null &&
         p.sho !== null &&
@@ -167,7 +169,9 @@ export default class HolServer implements Party.Server {
       return;
     }
 
-    const [a, b] = pickDistinctPair(pool);
+    // Weighted pair — biased toward top leagues + higher OVR so you frequently
+    // get a recognizable name on at least one side of the card.
+    const [a, b] = weightedPickPair(pool);
     const round: HolRound = {
       index: ++this.roundIndex,
       a,
@@ -242,15 +246,4 @@ export default class HolServer implements Party.Server {
 function clampRoundCount(n: number) {
   if (!Number.isFinite(n)) return DEFAULT_ROUND_COUNT;
   return Math.max(3, Math.min(30, Math.floor(n)));
-}
-
-function pickDistinctPair(pool: Player[]): [Player, Player] {
-  // Ensure non-identical OVRs to avoid boring ties.
-  let [a, b] = pickPair(pool);
-  let tries = 0;
-  while (a.ovr === b.ovr && tries < 10) {
-    [a, b] = pickPair(pool);
-    tries++;
-  }
-  return [a, b];
 }

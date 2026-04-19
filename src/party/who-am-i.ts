@@ -20,7 +20,8 @@ import type {
   WhoServerMessage,
   WhoState,
 } from "../lib/game-types";
-import { pickAvatar, pickRandom } from "../lib/utils";
+import { pickAvatar } from "../lib/utils";
+import { OVR_STAR, weightedPick } from "../lib/tier-pools";
 
 const CLUE_INTERVAL_MS = 15_000;
 const ROUND_WINDOW_MS = 95_000; // 6 clues × 15s ≈ 90s plus a beat
@@ -160,13 +161,16 @@ export default class WhoServer implements Party.Server {
   /* ---------- state machine ---------- */
 
   private startRound() {
-    const pool = usablePlayers().filter((p) => p.ovr >= 80); // need recognisable names
+    // Pool matches Playerdle (OVR_STAR / ≥82) with league-weighted selection
+    // so clues like "Premier League" or "Real Madrid" give players an
+    // actual fighting chance at recognizable names.
+    const pool = usablePlayers().filter((p) => p.ovr >= OVR_STAR);
     if (pool.length < 1) {
       this.state.phase = "finished";
       this.broadcast();
       return;
     }
-    const mystery = pickRandom(pool);
+    const mystery = weightedPick(pool);
     const now = Date.now();
     const clues = buildClues(mystery, now);
     const round: WhoRound = {

@@ -20,6 +20,12 @@ import type {
 } from "../lib/game-types";
 import { FUT_4_3_3_SLOTS } from "../lib/game-types";
 import { pickAvatar, shuffle } from "../lib/utils";
+import {
+  OVR_FLOOR,
+  OVR_KNOWN,
+  OVR_STAR,
+  weightedPickN,
+} from "../lib/tier-pools";
 
 const SLOT_WINDOW_MS = 25_000;
 const OPTIONS_PER_SLOT = 5;
@@ -155,11 +161,16 @@ export default class FutServer implements Party.Server {
     // Fallback: if the filter produced too few players (e.g. a rare position tag combo), widen to all usable players.
     if (pool.length < OPTIONS_PER_SLOT) pool = fullPool;
 
-    // Every connected player gets their own random 5.
+    // Each player gets a 5-card shortlist with a guaranteed quality mix:
+    //   1× elite (≥ OVR_STAR / 82) — a dream pick if you grab it
+    //   2× known (≥ OVR_KNOWN / 78) — solid first-team players
+    //   2× floor (≥ OVR_FLOOR / 72) — recognizable second-tier names
+    // League weighting biases each tier toward the Top 5 leagues.
+    // Falls back gracefully if a tier is empty for the slot's position.
     const options: Record<string, Player[]> = {};
     for (const p of Object.values(this.state.players)) {
       if (!p.connected) continue;
-      options[p.id] = shuffle(pool).slice(0, OPTIONS_PER_SLOT);
+      options[p.id] = buildShortlist(pool, OPTIONS_PER_SLOT);
     }
 
     const round: FutRound = {
@@ -230,4 +241,59 @@ export default class FutServer implements Party.Server {
     const payload = JSON.stringify({ type: "state", state: this.state } satisfies FutServerMessage);
     for (const c of this.party.getConnections()) c.send(payload);
   }
+}
+
+/**
+ * Build a 5-card FUT Draft shortlist from a position-filtered pool.
+ *
+ * Composition: 1 × elite (≥ OVR_STAR / 82), 2 × known (≥ OVR_KNOWN / 78),
+ * 2 × floor (≥ OVR_FLOOR / 72). Each bucket samples weighted by league, and
+ * within each bucket picks are made without replacement.
+ *
+ * Robust fallbacks: if a tier is empty (e.g. "CAM only + ≥82 OVR" produces
+ * zero players in the dataset), the helper drops to the next tier for the
+ * missing slots, and finally shuffles from the raw pool if even that runs
+ * out. Output is deduped and length-`size` or less (usually exactly `size`).
+ */
+function buildShortlist(pool: readonly Player[], size: number): Player[] {
+  if (pool.length <= size) return shuffle(pool).slice(0, size);
+
+  // Tier buckets (descending OVR). Targets sum to `size`.
+  const buckets: Array<{ want: number; players: Player[] }> = [
+    { want: 1, players: pool.filter((p) => p.ovr >= OVR_STAR) },
+    { want: 2, players: pool.filter((p) => p.ovr >= OVR_KNOWN && p.ovr < OVR_STAR) },
+    { want: 2, players: pool.filter((p) => p.ovr >= OVR_FLOOR && p.ovr < OVR_KNOWN) },
+  ];
+
+  const picked: Player[] = [];
+  const seen = new Set<string>();
+  let carryOver = 0;
+
+  // Walk buckets high→low. Under-fill in a higher tier cascades down as extra
+  // demand on the next bucket, so the final count is stable even when the
+  // position-filtered pool has a sparse OVR distribution.
+  for (const bucket of buckets) {
+    const eligible = bucket.players.filter((p) => !seen.has(p.id));
+    const target = bucket.want + carryOver;
+    const taken = weightedPickN(eligible, target);
+    for (const p of taken) {
+      seen.add(p.id);
+      picked.push(p);
+    }
+    carryOver = target - taken.length;
+  }
+
+  // Last-resort top-up from the full pool, uniform, for pathological cases.
+  if (picked.length < size) {
+    const leftovers = shuffle(pool.filter((p) => !seen.has(p.id)));
+    for (const p of leftovers) {
+      if (picked.length >= size) break;
+      picked.push(p);
+      seen.add(p.id);
+    }
+  }
+
+  // Shuffle so the elite card isn't always at position 0 — forces the user
+  // to look at all 5 options instead of reflex-tapping the first one.
+  return shuffle(picked).slice(0, size);
 }

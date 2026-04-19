@@ -19,7 +19,8 @@ import type {
   Player,
   RoomPlayer,
 } from "../lib/game-types";
-import { pickAvatar, pickRandom } from "../lib/utils";
+import { pickAvatar } from "../lib/utils";
+import { OVR_STAR, weightedPick } from "../lib/tier-pools";
 
 const ROUND_WINDOW_MS = 150_000;            // 2m30s per round
 const ROUND_END_PAUSE_MS = 8_000;
@@ -160,13 +161,17 @@ export default class PdleServer implements Party.Server {
   /* ---------- state machine ---------- */
 
   private startRound() {
-    const pool = usablePlayers().filter((p) => p.ovr >= 82);
+    // Mystery players are drawn from the OVR_STAR (≥82) pool — about 500
+    // recognizable footballers. Within that pool, league weighting biases
+    // selection toward the Top 5 leagues so most rounds feature a name
+    // people from anywhere can identify.
+    const pool = usablePlayers().filter((p) => p.ovr >= OVR_STAR);
     if (pool.length < 1) {
       this.state.phase = "finished";
       this.broadcast();
       return;
     }
-    const mystery = pickRandom(pool);
+    const mystery = weightedPick(pool);
     const round: PdleRound = {
       index: ++this.roundIndex,
       mysteryId: mystery.id,
