@@ -547,14 +547,16 @@ function Footer() {
           <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--accent)", display: "inline-block" }} />
           <span>Goal Miners · back to games</span>
         </Link>
-        <span>Projected field & ratings — not an official FIFA draw.</span>
+        <span>Official 2026 draw · team ratings are projections.</span>
       </div>
     </footer>
   );
 }
 
 /* ------------------------------- PAGE ----------------------------------- */
-const SIM_KEY = "wc26-sim-v1";
+// v2: bumped when the projected draw was replaced with the official one —
+// saved simulations against the old groups would render incorrectly.
+const SIM_KEY = "wc26-sim-v2";
 
 export default function WorldCupPage() {
   const { theme, motion, setTheme, setMotion } = usePrefs();
