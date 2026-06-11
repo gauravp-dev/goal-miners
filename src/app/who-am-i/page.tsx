@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Who Am I? — Football Trivia Game",
+  description: "Six drip-fed clues, one mystery footballer. First correct answer wins the points. Free multiplayer football trivia for the group chat.",
+  alternates: { canonical: "/who-am-i" },
+};
+
 import Link from "next/link";
 import { ArrowLeft, UserSearch } from "lucide-react";
 import { LobbyForm } from "@/components/LobbyForm";

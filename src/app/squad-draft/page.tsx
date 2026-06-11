@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Squad Number Draft — Call a Shirt, Get a Player",
+  description: "Snake-draft a 4-3-3 by calling shirt numbers — the server pulls a random real player wearing it. Free multiplayer football party game.",
+  alternates: { canonical: "/squad-draft" },
+};
+
 import Link from "next/link";
 import { ArrowLeft, Hash } from "lucide-react";
 import { LobbyForm } from "@/components/LobbyForm";

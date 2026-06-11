@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Playerdle — Guess the Footballer",
+  description: "Wordle for football: guess the mystery footballer in 8 tries with colour-coded clues for nation, league, club, position, age and rating. Free multiplayer.",
+  alternates: { canonical: "/playerdle" },
+};
+
 import Link from "next/link";
 import { ArrowLeft, Target } from "lucide-react";
 import { LobbyForm } from "@/components/LobbyForm";

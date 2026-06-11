@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Higher or Lower — Football Ratings Game",
+  description: "Free multiplayer Higher or Lower with real footballers: guess whose rating is higher, build a streak, outlast your friends. Play in the browser, no sign-up.",
+  alternates: { canonical: "/higher-or-lower" },
+};
+
 import Link from "next/link";
 import { ArrowLeft, Flame } from "lucide-react";
 import { LobbyForm } from "@/components/LobbyForm";

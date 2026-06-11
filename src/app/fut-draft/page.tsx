@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "FUT Draft — Build Your Best 4-3-3",
+  description: "Free multiplayer FUT draft: eleven slots, five random choices each, 25 seconds per pick. Highest squad rating wins. Play with friends in the browser.",
+  alternates: { canonical: "/fut-draft" },
+};
+
 import Link from "next/link";
 import { ArrowLeft, LayoutGrid } from "lucide-react";
 import { LobbyForm } from "@/components/LobbyForm";
